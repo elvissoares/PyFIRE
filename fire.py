@@ -1,7 +1,7 @@
 import numpy as np
 # Author: Elvis do A. Soares
 # Github: @elvissoares
-# Date: 2020-06-03
+# Date: 2020-06-05
 
 " ==== FIRE: Fast Inertial Relaxation Engine ===== "
 
@@ -19,7 +19,7 @@ fdec = 0.5
 fa = 0.99
 Nnegmax = 2000
 
-def optimize_fire(x0,f,df,params,atol,dt = 0.002):
+def optimize_fire(x0,f,df,params,atol=1e-4,dt = 0.002,logoutput=False):
     error = 10*atol 
     dt = 0.002
     dtmax = 10*dt
@@ -32,8 +32,8 @@ def optimize_fire(x0,f,df,params,atol,dt = 0.002):
     F = -df(x,params)
 
     for i in range(Nmax):
-        if (len(x.shape))>1: P = np.tensordot(F,V,axes=2).sum()
-        else: P = np.dot(F,V)
+
+        P = (F*V).sum() # dissipated power
         
         if (P>0):
             Npos = Npos + 1
@@ -55,10 +55,12 @@ def optimize_fire(x0,f,df,params,atol,dt = 0.002):
         error = np.linalg.norm(F)
         if error < atol: break
 
+        if logoutput: print(f(x,params),error)
+
     del V, F  
     return [x,f(x,params),i]
 
-def optimize_fire2(x0,f,df,params,atol,dt = 0.002):
+def optimize_fire2(x0,f,df,params,atol=1e-4,dt = 0.002,logoutput=False):
     error = 10*atol 
     dtmax = 10*dt
     dtmin = 0.02*dt
@@ -72,8 +74,7 @@ def optimize_fire2(x0,f,df,params,atol,dt = 0.002):
 
     for i in range(Nmax):
 
-        if (len(x.shape))>1: P = np.tensordot(F,V,axes=2).sum()
-        else: P = np.dot(F,V)
+        P = (F*V).sum() # dissipated power
         
         if (P>0):
             Npos = Npos + 1
@@ -100,7 +101,7 @@ def optimize_fire2(x0,f,df,params,atol,dt = 0.002):
         error = np.linalg.norm(F)
         if error < atol: break
 
-        print(f(x,params),error)
+        if logoutput: print(f(x,params),error)
 
     del V, F  
     return [x,f(x,params),i]
@@ -120,13 +121,13 @@ if __name__ == "__main__":
     p = [1,100]
     x0 = np.array([3.0,4.0])
 
-    [xmin,fmin,Niter] = optimize_fire(x0,f,gradf,p,1e-4)
+    [xmin,fmin,Niter] = optimize_fire(x0,f,gradf,p,1e-6)
 
     print("xmin = ", xmin)
     print("fmin = ", fmin)
     print("Iterations = ",Niter)
 
-    [xmin,fmin,Niter] = optimize_fire2(x0,f,gradf,p,1e-4)
+    [xmin,fmin,Niter] = optimize_fire2(x0,f,gradf,p,1e-6)
 
     print("xmin = ", xmin)
     print("fmin = ", fmin)
