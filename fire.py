@@ -2,6 +2,7 @@ import numpy as np
 # Author: Elvis do A. Soares
 # Github: @elvissoares
 # Date: 2020-06-05
+# Updated: 2021-05-31
 
 " ==== FIRE: Fast Inertial Relaxation Engine ===== "
 
@@ -21,7 +22,6 @@ Nnegmax = 2000
 
 def optimize_fire(x0,f,df,params,atol=1e-4,dt = 0.002,logoutput=False):
     error = 10*atol 
-    dt = 0.002
     dtmax = 10*dt
     dtmin = 0.02*dt
     alpha = alpha0
@@ -52,7 +52,7 @@ def optimize_fire(x0,f,df,params,atol=1e-4,dt = 0.002,logoutput=False):
         F = -df(x,params)
         V = V + 0.5*dt*F
 
-        error = np.linalg.norm(F)
+        error = max(abs(F))
         if error < atol: break
 
         if logoutput: print(f(x,params),error)
@@ -98,7 +98,7 @@ def optimize_fire2(x0,f,df,params,atol=1e-4,dt = 0.002,logoutput=False):
         F = -df(x,params)
         V = V + 0.5*dt*F
 
-        error = np.linalg.norm(F)
+        error = max(abs(F))
         if error < atol: break
 
         if logoutput: print(f(x,params),error)
@@ -106,10 +106,14 @@ def optimize_fire2(x0,f,df,params,atol=1e-4,dt = 0.002,logoutput=False):
     del V, F  
     return [x,f(x,params),i]
 
-##### Take a example using Rosenbrock function ######
+############################################
 if __name__ == "__main__":
 
-    # The Rosenbrock function
+    ###############
+    print('========= Optimizing the Rosenbrock function =========')
+    print('xmim=',np.array([1.0,1.0]))
+    print('fmim=',0.0)
+
     def gradf(x,params):
         [a,b] = params
         return np.array([-2*(a-x[0])-4*b*(x[1]-x[0]*x[0])*x[0],2*b*(x[1]-x[0]*x[0])])
@@ -121,13 +125,47 @@ if __name__ == "__main__":
     p = [1,100]
     x0 = np.array([3.0,4.0])
 
+    print('Fire version 1')
     [xmin,fmin,Niter] = optimize_fire(x0,f,gradf,p,1e-6)
 
     print("xmin = ", xmin)
     print("fmin = ", fmin)
     print("Iterations = ",Niter)
 
+    print('Fire version 2')
     [xmin,fmin,Niter] = optimize_fire2(x0,f,gradf,p,1e-6)
+
+    print("xmin = ", xmin)
+    print("fmin = ", fmin)
+    print("Iterations = ",Niter)
+
+    ########################
+    print('========= Optimizing the Eggholder function =========')
+    print('xmim=',np.array([512.0,404.0]))
+    print('fmim=',-956.6407)
+
+    def gradf(x,params):
+        c0 = params
+        arg1 = np.sqrt(np.abs(x[1]+0.5*x[0]+c0))
+        arg2 = np.sqrt(np.abs(x[0]-(x[1]+c0)))
+        return np.array([-x[0]*(-c0+x[0]-x[1])*np.cos(arg2)/(2*arg2**3)-(c0+x[1])*(c0+0.5*x[0]+x[1])*np.cos(arg1)/(4*arg1**3)-np.sin(arg2),x[1]*(-c0+x[0]-x[1])*np.cos(arg2)/(2*arg2**3)-(c0+x[1])*(c0+0.5*x[0]+x[1])*np.cos(arg1)/(2*arg1**3)-np.sin(arg2)])
+        
+    def f(x,params):
+        c0 = params
+        return -(x[1]+c0)*np.sin(np.sqrt(np.abs(x[1]+0.5*x[0]+c0)))-x[0]*np.sin(np.sqrt(np.abs(x[0]-(x[1]+c0))))
+
+    p = 47
+    x0 = np.array([0.0,0.0])
+
+    print('Fire version 1')
+    [xmin,fmin,Niter] = optimize_fire(x0,f,gradf,p,1e-6,0.1)
+
+    print("xmin = ", xmin)
+    print("fmin = ", fmin)
+    print("Iterations = ",Niter)
+
+    print('Fire version 2')
+    [xmin,fmin,Niter] = optimize_fire2(x0,f,gradf,p,1e-6,0.1)
 
     print("xmin = ", xmin)
     print("fmin = ", fmin)
